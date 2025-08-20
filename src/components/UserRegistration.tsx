@@ -344,7 +344,7 @@ const UserRegistration: React.FC<UserRegistrationProps> = ({ onComplete, onUserR
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="pl-10 w-full border text-black border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="(555) 123-4567"
+                  placeholder="(+254) 723-4567"
                 />
               </div>
             </div>

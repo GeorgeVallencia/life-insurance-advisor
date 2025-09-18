@@ -8,191 +8,158 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  firstName     String?
-  lastName      String?
-  phone         String?
-  
-  // Profile information
-  age           Int?
-  income        Int?
-  state         String?
-  country       String?  // NEW: Country for global support
-  currency      String?  // NEW: Preferred currency display
-  gender        String?
-  smoker        Boolean  @default(false)
-  maritalStatus String?
-  dependents    Int?
-  mortgage      Int?
-  studentLoans  Int?
-  
-  // User preferences
+  id               String         @id @default(cuid())
+  email            String         @unique
+  firstName        String?
+  lastName         String?
+  phone            String?
+  age              Int?
+  income           Int?
+  state            String?
+  country          String?
+  currency         String?
+  gender           String?
+  smoker           Boolean        @default(false)
+  maritalStatus    String?
+  dependents       Int?
+  mortgage         Int?
+  studentLoans     Int?
   preferredContact String?
   timezone         String?
-  
-  // Tracking
   source           String?
   utmSource        String?
   utmMedium        String?
   utmCampaign      String?
-  
-  // Status
-  status           String   @default("active")
-  emailVerified    Boolean  @default(false)
-  phoneVerified    Boolean  @default(false)
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  lastActiveAt  DateTime @default(now())
-  
-  // Relations
-  conversations Conversation[]
-  quotes        Quote[]
-  leads         Lead[]
-  
+  status           String         @default("active")
+  emailVerified    Boolean        @default(false)
+  phoneVerified    Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  lastActiveAt     DateTime       @default(now())
+  conversations    Conversation[]
+  leads            Lead[]
+  quotes           Quote[]
+
   @@map("users")
 }
 
 model Conversation {
-  id          String   @id @default(cuid())
-  sessionId   String   @unique
+  id          String    @id @default(cuid())
+  sessionId   String    @unique
   userId      String?
-  status      String   @default("active")
+  status      String    @default("active")
   userProfile Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User?     @relation(fields: [userId], references: [id])
+  leads       Lead[]
   messages    Message[]
   quotes      Quote[]
-  leads       Lead[]
-  
+
   @@map("conversations")
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   sessionId      String
   content        String
-  role           String   
-  createdAt      DateTime @default(now())
-  timestamp      DateTime @default(now())
+  role           String
+  createdAt      DateTime     @default(now())
+  timestamp      DateTime     @default(now())
   metadata       Json?
-  
-  // Relations
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+
   @@map("messages")
 }
 
 model Quote {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   sessionId      String
   conversationId String?
   userId         String?
   carrier        String
   monthlyPremium Float
   coverageAmount Int
-  term           Int      @default(20)
+  term           Int           @default(20)
   quoteData      Json?
-  isEstimate     Boolean  @default(false)  // NEW: Mark if it's an estimate vs real quote
-  currency       String   @default("$")    // NEW: Currency for the quote
-  createdAt      DateTime @default(now())
-  
-  // Relations
-  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  isEstimate     Boolean       @default(false)
+  currency       String        @default("$")
+  createdAt      DateTime      @default(now())
   conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+  user           User?         @relation(fields: [userId], references: [id])
+
   @@map("quotes")
 }
 
 model Lead {
-  id        Int      @id @default(autoincrement())
-  sessionId String   @map("session_id")
-  userId    String?  @map("user_id")
-  conversationId String? @map("conversation_id")
-  
-  // Contact Information
-  email     String   @unique
-  firstName String   @map("first_name")
-  lastName  String   @map("last_name")
-  phone     String
-  
-  // Profile Information
+  id             Int            @id @default(autoincrement())
+  sessionId      String         @map("session_id")
+  userId         String?        @map("user_id")
+  conversationId String?        @map("conversation_id")
+  email          String         @unique
+  firstName      String         @map("first_name")
+  lastName       String         @map("last_name")
+  phone          String
   age            Int?
   income         Int?
-  dependents     Int?     @default(0)
-  coverageAmount Int?     @map("coverage_amount")
+  dependents     Int?           @default(0)
+  coverageAmount Int?           @map("coverage_amount")
   mortgage       Int?
-  studentLoans   Int?     @map("student_loans")
-  maritalStatus  String?  @map("marital_status")
+  studentLoans   Int?           @map("student_loans")
+  maritalStatus  String?        @map("marital_status")
   gender         Gender?
-  smoker         Boolean? @default(false)
-  state          String?  // US state code
-  concerns       Json?    // Array of concern strings
-  
-  // Lead Management
-  status       LeadStatus @default(NEW)
-  source       String     @default("website")
-  notes        String?
-  assignedTo   String?    @map("assigned_to")
-  priority     Int        @default(3) // 1=urgent, 5=low
-  
-  // Tracking Dates
-  lastContacted   DateTime? @map("last_contacted")
-  followUpDate    DateTime? @map("follow_up_date")
-  conversionDate  DateTime? @map("conversion_date")
-  
-  // Timestamps
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at") // Soft delete
-  
-  // Relations
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  quotes       LeadQuote[]
-  activities   LeadActivity[]
-  tags         LeadTag[]
-  
+  smoker         Boolean?       @default(false)
+  state          String?
+  concerns       Json?
+  status         LeadStatus     @default(NEW)
+  source         String         @default("website")
+  notes          String?
+  assignedTo     String?        @map("assigned_to")
+  priority       Int            @default(3)
+  lastContacted  DateTime?      @map("last_contacted")
+  followUpDate   DateTime?      @map("follow_up_date")
+  conversionDate DateTime?      @map("conversion_date")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+  activities     LeadActivity[]
+  quotes         LeadQuote[]
+  tags           LeadTag[]
+  conversation   Conversation?  @relation(fields: [conversationId], references: [id])
+  user           User?          @relation(fields: [userId], references: [id])
+
   @@map("leads")
 }
 
 model LeadQuote {
-  id             Int      @id @default(autoincrement())
-  leadId         Int      @map("lead_id")
+  id             Int       @id @default(autoincrement())
+  leadId         Int       @map("lead_id")
   carrier        String
-  monthlyPremium Decimal  @map("monthly_premium") @db.Decimal(10, 2)
-  annualPremium  Decimal  @map("annual_premium") @db.Decimal(10, 2)
-  coverageAmount Int      @map("coverage_amount")
-  term           Int      // Years
-  productName    String   @map("product_name")
-  quoteId        String   @map("quote_id")
-  isSelected     Boolean  @default(false) @map("is_selected")
+  monthlyPremium Decimal   @map("monthly_premium") @db.Decimal(10, 2)
+  annualPremium  Decimal   @map("annual_premium") @db.Decimal(10, 2)
+  coverageAmount Int       @map("coverage_amount")
+  term           Int
+  productName    String    @map("product_name")
+  quoteId        String    @map("quote_id")
+  isSelected     Boolean   @default(false) @map("is_selected")
   expiresAt      DateTime? @map("expires_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  
-  // Relations
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lead           Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
   @@map("lead_quotes")
 }
 
 model LeadActivity {
   id           Int      @id @default(autoincrement())
   leadId       Int      @map("lead_id")
-  activityType String   @map("activity_type") // 'call', 'email', 'note', 'status_change'
+  activityType String   @map("activity_type")
   description  String
-  performedBy  String?  @map("performed_by") // Agent email or system
-  metadata     Json?    // Additional structured data
+  performedBy  String?  @map("performed_by")
+  metadata     Json?
   createdAt    DateTime @default(now()) @map("created_at")
-  
-  // Relations
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
   @@map("lead_activities")
 }
 
@@ -201,27 +168,24 @@ model LeadTag {
   leadId    Int      @map("lead_id")
   tag       String
   createdAt DateTime @default(now()) @map("created_at")
-  
-  // Relations
-  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
   @@unique([leadId, tag])
   @@map("lead_tags")
 }
 
-// Enums
 enum LeadStatus {
   NEW
   CONTACTED
   CONVERTED
   LOST
-  
+
   @@map("lead_status")
 }
 
 enum Gender {
   MALE
   FEMALE
-  
+
   @@map("gender")
 }
